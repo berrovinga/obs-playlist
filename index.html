@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Berrovinga Master Elite Proxy</title>
+    <style>
+        :root { --dynamic-color: #ffffff; --dynamic-glow: rgba(255,255,255,0.4); }
+        body { margin: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: white; }
+        #player { position: absolute; top: -9999px; left: -9999px; }
+        #bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(60px) brightness(0.12); z-index: 1; transition: 1.5s; animation: bg-pulse 3s infinite ease-in-out; }
+        #status-text { position: absolute; top: 8vh; width: 100%; text-align: center; font-size: 80px; font-weight: 900; text-transform: uppercase; letter-spacing: 15px; text-shadow: 0 0 30px var(--dynamic-glow), 0 0 60px var(--dynamic-glow); animation: breathe 4s infinite ease-in-out; display: none; z-index: 100; }
+        #main-ui { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 50; }
+        #cover-art { width: 450px; height: 450px; border-radius: 25px; box-shadow: 0 30px 100px rgba(0,0,0,1), 0 0 40px var(--dynamic-glow); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.15); transition: all 1s ease; margin-bottom: 25px; }
+        #title { font-weight: 800; font-size: 34px; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,1); }
+        #artist { font-size: 19px; font-weight: 700; color: var(--dynamic-color); text-transform: uppercase; letter-spacing: 4px; margin: 8px 0 25px 0; transition: color 1.5s ease; text-shadow: 0 2px 10px rgba(0,0,0,1); }
+        #progress-wrapper { width: 500px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; margin-bottom: 30px; }
+        #progress-bar { width: 0%; height: 100%; border-radius: 10px; background: var(--dynamic-color); transition: width 0.5s linear; }
+        .controls { display: flex; gap: 35px; align-items: center; }
+        .btn { cursor: pointer; background: rgba(255,255,255,0.1); border: none; color: white; padding: 12px; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.3s; }
+        #play-btn { width: 75px; height: 75px; font-size: 26px; background: var(--dynamic-color); color: #000; box-shadow: 0 0 30px var(--dynamic-color); }
+        #visualizer { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; align-items: flex-end; gap: 2px; height: 160px; z-index: 10; opacity: 0.7; filter: blur(3px); pointer-events: none; }
+        .bar { flex: 1; height: 5%; background: var(--dynamic-color); box-shadow: 0 0 20px var(--dynamic-color); transition: background 1.5s ease; }
+        @keyframes breathe { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } }
+        @keyframes bg-pulse { 0%, 100% { filter: blur(60px) brightness(0.12); } 50% { filter: blur(60px) brightness(0.15); } }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <div id="bg-image"></div>
+    <div id="status-text"></div>
+    <div id="main-ui">
+        <div id="cover-art"></div>
+        <h1 id="title">Yükleniyor...</h1>
+        <p id="artist">Berrovinga Music</p>
+        <div id="progress-wrapper" onclick="App.seek(event)"><div id="progress-bar"></div></div>
+        <div class="controls">
+            <button class="btn" onclick="App.prev()">⏮</button>
+            <button id="play-btn" class="btn" onclick="App.togglePlay()">⏸</button>
+            <button class="btn" onclick="App.next()">⏭</button>
+        </div>
+    </div>
+    <div id="visualizer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <script>
+        const WORKER_URL = "https://berrovinga-proxy.ytb6034.workers.dev";
+
+        const App = {
+            state: { player: null, bars: [], lastScene: "", colorThief: new ColorThief() },
+            init() {
+                const viz = document.getElementById('visualizer');
+                for(let i=0; i<80; i++) {
+                    const bar = document.createElement('div'); bar.className = 'bar';
+                    viz.appendChild(bar);
+                    this.state.bars.push({ el: bar, val: 5, target: 5, mult: i<15?90:(i>65?45:65) });
+                }
+                const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(tag);
+                
+                // REMOTE KONTROL (Worker üzerinden saniyede bir bak)
+                setInterval(async () => {
+                    try {
+                        const res = await fetch(`${WORKER_URL}/sync`);
+                        const data = await res.json();
+                        if (data && data.remoteAction && data.remoteTime > (this.state.lastRemoteTime || 0)) {
+                            this.state.lastRemoteTime = data.remoteTime;
+                            if (data.remoteAction === 'next') this.next();
+                            if (data.remoteAction === 'prev') this.prev();
+                            if (data.remoteAction === 'toggle') this.togglePlay();
+                        }
+                    } catch(e) {}
+                }, 1000);
+
+                this.render();
+            },
+            render() {
+                const isPlaying = this.state.player?.getPlayerState() === 1;
+                this.state.bars.forEach(bar => {
+                    if (isPlaying) { if(Math.random() > 0.85) bar.target = Math.random() * bar.mult + 10; }
+                    else { bar.target = 5; }
+                    bar.val += (bar.target - bar.val) * 0.15;
+                    bar.el.style.height = bar.val + "%";
+                });
+                requestAnimationFrame(() => this.render());
+            },
+            async updateTheme(id) {
+                const img = new Image(); img.crossOrigin = "Anonymous";
+                img.src = `https://images.weserv.nl/?url=${encodeURIComponent('https://img.youtube.com/vi/'+id+'/mqdefault.jpg')}`;
+                img.onload = async () => {
+                    try {
+                        let c = this.state.colorThief.getColor(img);
+                        let r=c[0], g=c[1], b=c[2];
+                        const brightness = (r*299+g*587+b*114)/1000;
+                        if (brightness < 80) { r = Math.min(255, r + 110); g = Math.min(255, g + 110); b = Math.min(255, b + 110); }
+                        const rgb = `rgb(${r},${g},${b})`;
+                        document.documentElement.style.setProperty('--dynamic-color', rgb);
+                        document.documentElement.style.setProperty('--dynamic-glow', `rgba(${r},${g},${b},0.6)`);
+                        
+                        // Sync verisini Worker üzerinden buluta gönder
+                        const data = this.state.player.getVideoData();
+                        await fetch(`${WORKER_URL}/update-sync`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                title: data.title, artist: data.author,
+                                cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
+                                playing: this.state.player.getPlayerState() === 1
+                            })
+                        });
+                    } catch(e) {}
+                };
+                const full = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+                document.getElementById('cover-art').style.backgroundImage = `url(${full})`;
+                document.getElementById('bg-image').style.backgroundImage = `url(${full})`;
+            },
+            updateUI() {
+                const p = this.state.player; if (!p || !p.getVideoData) return;
+                const data = p.getVideoData();
+                document.getElementById('title').innerText = data.title;
+                document.getElementById('artist').innerText = data.author;
+                document.getElementById('progress-bar').style.width = (p.getCurrentTime()/p.getDuration()*100) + "%";
+                if (this.state.curId !== data.video_id) { this.state.curId = data.video_id; this.updateTheme(data.video_id); }
+            },
+            togglePlay() { const s = this.state.player.getPlayerState(); s===1 ? this.state.player.pauseVideo() : this.state.player.playVideo(); },
+            next() { this.state.player.nextVideo(); }, prev() { this.state.player.previousVideo(); },
+            seek(e) { const r = document.getElementById('progress-wrapper').getBoundingClientRect(); this.state.player.seekTo(this.state.player.getDuration() * ((e.clientX - r.left)/r.width)); },
+            handleScene(s) {
+                if (!s) return; const name = (typeof s === 'string' ? s : s.name).toLowerCase();
+                if (name === this.state.lastScene) return;
+                const el = document.getElementById('status-text');
+                if (name.includes('intro') || name.includes('outro')) {
+                    this.state.player?.playVideoAt(this.state.player.getPlaylistIndex());
+                    el.innerText = name.includes('intro') ? "YAYIN BAŞLIYOR" : "YAYIN BİTTİ";
+                    el.style.display = "block";
+                } else { this.state.player?.pauseVideo(); el.style.display = "none"; }
+                this.state.lastScene = name;
+            }
+        };
+        function onYouTubeIframeAPIReady() {
+            const savedIndex = parseInt(localStorage.getItem('lastIndex')) || 0;
+            App.state.player = new YT.Player('player', {
+                height: '100', width: '100',
+                playerVars: { 'listType': 'playlist', 'list': 'PLQOLV2Xf5ZBDoEJmhgkaS57p97-XzSdbY', 'autoplay': 1, 'controls': 0 },
+                events: {
+                    'onReady': () => {
+                        if (savedIndex > 0) App.state.player.playVideoAt(savedIndex);
+                        if (window.obsstudio) {
+                            setInterval(() => window.obsstudio.getCurrentScene(s => App.handleScene(s)), 200);
+                            window.obsstudio.onVisibilityChange = (v) => v ? App.state.player.playVideo() : App.state.player.pauseVideo();
+                        }
+                    },
+                    'onStateChange': async (e) => {
+                        document.getElementById('play-btn').innerText = e.data === 1 ? '⏸' : '▶';
+                        if (e.data === 1) {
+                            localStorage.setItem('lastIndex', App.state.player.getPlaylistIndex());
+                            if (!App.uiInterval) App.uiInterval = setInterval(() => App.updateUI(), 500);
+                        } else { clearInterval(App.uiInterval); App.uiInterval = null; }
+                        if (e.data === 0) App.state.player.playVideoAt(0);
+                        
+                        // Oynatma durumu senkronizasyonu
+                        await fetch(`${WORKER_URL}/update-sync`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ playing: e.data === 1 })
+                        });
+                    }
+                }
+            });
+        }
+        App.init();
+    </script>
+</body>
+</html>
