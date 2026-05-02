@@ -2,23 +2,21 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Berrovinga Master Elite Final</title>
+    <title>Berrovinga Elite Master Proxy</title>
     <style>
         :root { --dynamic-color: #ffffff; --dynamic-glow: rgba(255,255,255,0.4); }
         body { margin: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: white; }
         #player { position: absolute; top: -9999px; left: -9999px; }
-        #bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(60px) brightness(0.12); z-index: 1; transition: background-image 1.5s ease; animation: bg-pulse 3s infinite ease-in-out; }
-        #status-text { position: absolute; top: 8vh; width: 100%; text-align: center; font-size: 80px; font-weight: 900; text-transform: uppercase; letter-spacing: 15px; text-shadow: 0 0 30px var(--dynamic-glow); animation: breathe 4s infinite ease-in-out; display: none; z-index: 100; }
-        #main-ui { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; z-index: 50; padding-top: 15vh; }
-        #cover-art { width: 450px; height: 450px; border-radius: 25px; box-shadow: 0 30px 100px rgba(0,0,0,1), 0 0 40px var(--dynamic-glow); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.15); transition: 1s; margin-bottom: 25px; }
-        #title { font-weight: 800; font-size: 32px; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,1); }
-        #artist { font-size: 18px; font-weight: 700; color: var(--dynamic-color); text-transform: uppercase; letter-spacing: 4px; margin: 8px 0 25px 0; transition: 1.5s; text-shadow: 0 2px 10px #000; }
-        #progress-wrapper { width: 500px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; margin-bottom: 30px; }
-        #progress-bar { width: 0%; height: 100%; border-radius: 10px; background: var(--dynamic-color); transition: width 0.5s linear; }
-        .controls { display: flex; gap: 35px; align-items: center; }
-        .btn { cursor: pointer; background: rgba(255,255,255,0.1); border: none; color: white; padding: 12px; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.3s; }
-        #play-btn { width: 75px; height: 75px; font-size: 26px; background: var(--dynamic-color); color: #000; box-shadow: 0 0 30px var(--dynamic-color); }
-        #visualizer { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; align-items: flex-end; gap: 2px; height: 160px; z-index: 10; opacity: 0.7; filter: blur(3px); pointer-events: none; }
+        #bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(60px) brightness(0.12); z-index: 1; transition: 1.5s; animation: bg-pulse 3s infinite ease-in-out; }
+        
+        #status-text { position: fixed; top: 10%; width: 100%; text-align: center; z-index: 100; font-size: 80px; font-weight: 900; text-transform: uppercase; letter-spacing: 15px; text-shadow: 0 0 30px var(--dynamic-glow); animation: breathe 4s infinite ease-in-out; display: none; }
+
+        #main-ui { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 50; padding-top: 50px; }
+        #cover-art { width: 450px; height: 450px; border-radius: 25px; box-shadow: 0 30px 100px rgba(0,0,0,1), 0 0 30px var(--dynamic-glow); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.15); transition: 1s; margin-bottom: 30px; }
+        #title { font-weight: 800; font-size: 36px; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,1); text-align: center; }
+        #artist { font-size: 20px; font-weight: 700; color: var(--dynamic-color); text-transform: uppercase; letter-spacing: 4px; margin-top: 10px; transition: 1.5s; text-shadow: 0 2px 10px #000; }
+
+        #visualizer { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; align-items: flex-end; gap: 2px; height: 160px; z-index: 10; opacity: 0.8; filter: blur(3px); pointer-events: none; }
         .bar { flex: 1; height: 5%; background: var(--dynamic-color); box-shadow: 0 0 20px var(--dynamic-color); transition: background 1.5s ease; }
         @keyframes breathe { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } }
         @keyframes bg-pulse { 0%, 100% { filter: blur(60px) brightness(0.12); } 50% { filter: blur(60px) brightness(0.15); } }
@@ -31,13 +29,7 @@
     <div id="main-ui">
         <div id="cover-art"></div>
         <h1 id="title">Bağlanıyor...</h1>
-        <p id="artist">Müzik Bekleniyor</p>
-        <div id="progress-wrapper" onclick="App.seek(event)"><div id="progress-bar"></div></div>
-        <div class="controls">
-            <button class="btn" onclick="App.prev()">⏮</button>
-            <button id="play-btn" class="btn" onclick="App.togglePlay()">⏸</button>
-            <button class="btn" onclick="App.next()">⏭</button>
-        </div>
+        <p id="artist">Berrovinga Music</p>
     </div>
     <div id="visualizer"></div>
 
@@ -51,7 +43,7 @@
                 for(let i=0; i<80; i++) {
                     const bar = document.createElement('div'); bar.className = 'bar';
                     viz.appendChild(bar);
-                    this.state.bars.push({ el: bar, val: 5, target: 5, mult: i<15?90:(i>65?45:65) });
+                    this.state.bars.push({ el: bar, val: 5, target: 5, mult: i<15?95:(i>65?50:70) });
                 }
                 const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
                 document.head.appendChild(tag);
@@ -63,9 +55,9 @@
                         if (data && data.remote && data.remote.time > (this.state.lastRemoteTime || this.state.startTime)) {
                             this.state.lastRemoteTime = data.remote.time;
                             const action = data.remote.action;
-                            if (action === 'next') this.next();
-                            if (action === 'prev') this.prev();
-                            if (action === 'toggle') this.togglePlay();
+                            if (action === 'next') this.state.player?.nextVideo();
+                            if (action === 'prev') this.state.player?.previousVideo();
+                            if (action === 'toggle') { const s = this.state.player?.getPlayerState(); s===1 ? this.state.player.pauseVideo() : this.state.player.playVideo(); }
                         }
                     } catch(e) {}
                 }, 800);
@@ -74,7 +66,7 @@
             render() {
                 const isPlaying = this.state.player && typeof this.state.player.getPlayerState === 'function' && this.state.player.getPlayerState() === 1;
                 this.state.bars.forEach(bar => {
-                    if (isPlaying) { if(Math.random() > 0.85) bar.target = Math.random() * bar.mult + 10; }
+                    if (isPlaying) { if(Math.random() > 0.8) bar.target = Math.random() * bar.mult + 10; }
                     else { bar.target = 5; }
                     bar.val += (bar.target - bar.val) * 0.15;
                     bar.el.style.height = bar.val + "%";
@@ -88,14 +80,15 @@
                     try {
                         let c = this.state.colorThief.getColor(img);
                         let r=c[0], g=c[1], b=c[2];
-                        const brightness = (r*299+g*587+b*114)/1000;
-                        if (brightness < 80) { r = Math.min(255, r + 110); g = Math.min(255, g + 110); b = Math.min(255, b + 110); }
+                        const br = (r*299+g*587+b*114)/1000;
+                        if (br < 80) { r = Math.min(255, r + 110); g = Math.min(255, g + 110); b = Math.min(255, b + 110); }
                         document.documentElement.style.setProperty('--dynamic-color', `rgb(${r},${g},${b})`);
                         document.documentElement.style.setProperty('--dynamic-glow', `rgba(${r},${g},${b},0.6)`);
                         
+                        const data = this.state.player.getVideoData();
                         await fetch(`${WORKER_URL}/update-sync`, {
                             method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ title: this.state.player.getVideoData().title, artist: this.state.player.getVideoData().author, cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, playing: true })
+                            body: JSON.stringify({ title: data.title, artist: data.author, cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, playing: this.state.player.getPlayerState() === 1 })
                         });
                     } catch(e) {}
                 };
@@ -108,13 +101,8 @@
                 const data = p.getVideoData();
                 document.getElementById('title').innerText = data.title;
                 document.getElementById('artist').innerText = data.author;
-                document.getElementById('progress-bar').style.width = (p.getCurrentTime()/p.getDuration()*100) + "%";
                 if (this.state.curId !== data.video_id) { this.state.curId = data.video_id; this.updateTheme(data.video_id); }
             },
-            togglePlay() { const s = this.state.player?.getPlayerState(); s===1 ? this.state.player.pauseVideo() : this.state.player.playVideo(); },
-            next() { this.state.player?.nextVideo(); },
-            prev() { this.state.player?.previousVideo(); },
-            seek(e) { const r = document.getElementById('progress-wrapper').getBoundingClientRect(); this.state.player.seekTo(this.state.player.getDuration() * ((e.clientX - r.left)/r.width)); },
             handleScene(s) {
                 if (!s) return; const name = (typeof s === 'string' ? s : s.name).toLowerCase();
                 if (name === this.state.lastScene) return;
@@ -139,11 +127,11 @@
                         window.obsstudio.onVisibilityChange = (v) => v ? App.state.player.playVideo() : App.state.player.pauseVideo();
                     },
                     'onStateChange': async (e) => {
-                        document.getElementById('play-btn').innerText = e.data === 1 ? '⏸' : '▶';
                         if (e.data === 1) {
                             localStorage.setItem('lastIndex', App.state.player.getPlaylistIndex());
                             if (!App.uiInterval) App.uiInterval = setInterval(() => App.updateUI(), 500);
                         } else { clearInterval(App.uiInterval); App.uiInterval = null; }
+                        if (e.data === 0) App.state.player.playVideoAt(0);
                         await fetch(`${WORKER_URL}/update-sync`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playing: e.data === 1 }) });
                     }
                 }
