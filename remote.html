@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berrovinga Remote PRO</title>
+    <title>Remote PRO</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; box-sizing: border-box; overflow: hidden; }
-        #bg-blur { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(50px) brightness(0.2); z-index: 1; transition: 1s; }
-        #content { position: relative; z-index: 10; width: 100%; display: flex; flex-direction: column; align-items: center; flex-grow: 1; justify-content: center; }
-        #remote-cover { width: 280px; height: 280px; border-radius: 25px; background-size: cover; background-position: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.15); transition: background-image 0.5s ease; }
-        #remote-title { font-size: 24px; font-weight: 800; margin: 0; text-align: center; max-width: 90%; text-shadow: 0 4px 10px #000; }
-        #remote-artist { font-size: 16px; opacity: 0.6; margin: 10px 0 40px 0; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; color: #ff0000; }
-        .controls { display: flex; align-items: center; gap: 35px; width: 100%; justify-content: center; margin-bottom: 40px; }
-        button { background: rgba(255,255,255,0.08); border: none; color: white; border-radius: 50%; width: 75px; height: 75px; font-size: 26px; display: flex; align-items: center; justify-content: center; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; box-sizing: border-box; overflow: hidden; justify-content: center; }
+        #bg-blur { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; filter: blur(50px) brightness(0.2); z-index: 1; transition: 1s; }
+        #content { position: relative; z-index: 10; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        #remote-cover { width: 180px; height: 180px; border-radius: 20px; background-size: cover; background-position: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.15); transition: 0.5s; }
+        #remote-title { font-size: 20px; font-weight: 800; margin: 0; text-align: center; max-width: 90%; }
+        #remote-artist { font-size: 14px; opacity: 0.6; margin: 5px 0 25px 0; text-transform: uppercase; }
+        .controls { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 15px; width: 90%; max-width: 400px; align-items: center; }
+        button { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 15px; padding: 20px; font-size: 20px; cursor: pointer; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
-        .btn-play { width: 100px; height: 100px; background: #ff0000; font-size: 36px; box-shadow: 0 0 30px rgba(255,0,0,0.4); color: #000; }
-        #status { font-size: 10px; opacity: 0.3; letter-spacing: 3px; }
+        .btn-play { background: #ff0000; font-size: 30px; height: 100%; color: #000; }
+        .btn-reset { grid-column: span 3; background: #333; font-size: 14px; padding: 10px; margin-top: 10px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -23,15 +23,14 @@
     <div id="content">
         <div id="remote-cover"></div>
         <h2 id="remote-title">Yükleniyor...</h2>
-        <p id="remote-artist">Proxy Active</p>
+        <p id="remote-artist">Offline</p>
         <div class="controls">
             <button onclick="sendCommand('prev')">⏮</button>
             <button class="btn-play" id="play-btn" onclick="sendCommand('toggle')">⏸</button>
             <button onclick="sendCommand('next')">⏭</button>
+            <button class="btn-reset" onclick="sendCommand('reset')">LİSTEYİ BAŞA AL</button>
         </div>
-        <div id="status">Secure Sync Connected</div>
     </div>
-
     <script>
         const WORKER_URL = "https://berrovinga-proxy.ytb6034.workers.dev";
         async function sync() {
@@ -49,9 +48,7 @@
             } catch(e) {}
         }
         setInterval(sync, 2000);
-        async function sendCommand(action) {
-            await fetch(`${WORKER_URL}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: action }) });
-        }
+        async function sendCommand(a) { await fetch(`${WORKER_URL}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: a }) }); }
     </script>
 </body>
 </html>
