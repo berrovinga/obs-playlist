@@ -2,17 +2,17 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Berrovinga Master Elite Proxy</title>
+    <title>Berrovinga Master Elite Final</title>
     <style>
         :root { --dynamic-color: #ffffff; --dynamic-glow: rgba(255,255,255,0.4); }
         body { margin: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: white; }
         #player { position: absolute; top: -9999px; left: -9999px; }
-        #bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(60px) brightness(0.12); z-index: 1; transition: 1.5s; animation: bg-pulse 3s infinite ease-in-out; }
-        #status-text { position: absolute; top: 8vh; width: 100%; text-align: center; font-size: 80px; font-weight: 900; text-transform: uppercase; letter-spacing: 15px; text-shadow: 0 0 30px var(--dynamic-glow), 0 0 60px var(--dynamic-glow); animation: breathe 4s infinite ease-in-out; display: none; z-index: 100; }
-        #main-ui { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 50; }
-        #cover-art { width: 450px; height: 450px; border-radius: 25px; box-shadow: 0 30px 100px rgba(0,0,0,1), 0 0 40px var(--dynamic-glow); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.15); transition: all 1s ease; margin-bottom: 25px; }
-        #title { font-weight: 800; font-size: 34px; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,1); }
-        #artist { font-size: 19px; font-weight: 700; color: var(--dynamic-color); text-transform: uppercase; letter-spacing: 4px; margin: 8px 0 25px 0; transition: color 1.5s ease; text-shadow: 0 2px 10px rgba(0,0,0,1); }
+        #bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(60px) brightness(0.12); z-index: 1; transition: background-image 1.5s ease; animation: bg-pulse 3s infinite ease-in-out; }
+        #status-text { position: absolute; top: 8vh; width: 100%; text-align: center; font-size: 80px; font-weight: 900; text-transform: uppercase; letter-spacing: 15px; text-shadow: 0 0 30px var(--dynamic-glow); animation: breathe 4s infinite ease-in-out; display: none; z-index: 100; }
+        #main-ui { height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; z-index: 50; padding-top: 15vh; }
+        #cover-art { width: 450px; height: 450px; border-radius: 25px; box-shadow: 0 30px 100px rgba(0,0,0,1), 0 0 40px var(--dynamic-glow); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.15); transition: 1s; margin-bottom: 25px; }
+        #title { font-weight: 800; font-size: 32px; margin: 0; text-shadow: 0 4px 15px rgba(0,0,0,1); }
+        #artist { font-size: 18px; font-weight: 700; color: var(--dynamic-color); text-transform: uppercase; letter-spacing: 4px; margin: 8px 0 25px 0; transition: 1.5s; text-shadow: 0 2px 10px #000; }
         #progress-wrapper { width: 500px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; margin-bottom: 30px; }
         #progress-bar { width: 0%; height: 100%; border-radius: 10px; background: var(--dynamic-color); transition: width 0.5s linear; }
         .controls { display: flex; gap: 35px; align-items: center; }
@@ -30,8 +30,8 @@
     <div id="status-text"></div>
     <div id="main-ui">
         <div id="cover-art"></div>
-        <h1 id="title">Yükleniyor...</h1>
-        <p id="artist">Berrovinga Music</p>
+        <h1 id="title">Bağlanıyor...</h1>
+        <p id="artist">Müzik Bekleniyor</p>
         <div id="progress-wrapper" onclick="App.seek(event)"><div id="progress-bar"></div></div>
         <div class="controls">
             <button class="btn" onclick="App.prev()">⏮</button>
@@ -44,9 +44,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <script>
         const WORKER_URL = "https://berrovinga-proxy.ytb6034.workers.dev";
-
         const App = {
-            state: { player: null, bars: [], lastScene: "", colorThief: new ColorThief() },
+            state: { player: null, bars: [], lastScene: "", colorThief: new ColorThief(), startTime: Date.now() },
             init() {
                 const viz = document.getElementById('visualizer');
                 for(let i=0; i<80; i++) {
@@ -57,24 +56,23 @@
                 const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
                 document.head.appendChild(tag);
                 
-                // REMOTE KONTROL (Worker üzerinden saniyede bir bak)
                 setInterval(async () => {
                     try {
                         const res = await fetch(`${WORKER_URL}/sync`);
                         const data = await res.json();
-                        if (data && data.remoteAction && data.remoteTime > (this.state.lastRemoteTime || 0)) {
-                            this.state.lastRemoteTime = data.remoteTime;
-                            if (data.remoteAction === 'next') this.next();
-                            if (data.remoteAction === 'prev') this.prev();
-                            if (data.remoteAction === 'toggle') this.togglePlay();
+                        if (data && data.remote && data.remote.time > (this.state.lastRemoteTime || this.state.startTime)) {
+                            this.state.lastRemoteTime = data.remote.time;
+                            const action = data.remote.action;
+                            if (action === 'next') this.next();
+                            if (action === 'prev') this.prev();
+                            if (action === 'toggle') this.togglePlay();
                         }
                     } catch(e) {}
-                }, 1000);
-
+                }, 800);
                 this.render();
             },
             render() {
-                const isPlaying = this.state.player?.getPlayerState() === 1;
+                const isPlaying = this.state.player && typeof this.state.player.getPlayerState === 'function' && this.state.player.getPlayerState() === 1;
                 this.state.bars.forEach(bar => {
                     if (isPlaying) { if(Math.random() > 0.85) bar.target = Math.random() * bar.mult + 10; }
                     else { bar.target = 5; }
@@ -92,20 +90,12 @@
                         let r=c[0], g=c[1], b=c[2];
                         const brightness = (r*299+g*587+b*114)/1000;
                         if (brightness < 80) { r = Math.min(255, r + 110); g = Math.min(255, g + 110); b = Math.min(255, b + 110); }
-                        const rgb = `rgb(${r},${g},${b})`;
-                        document.documentElement.style.setProperty('--dynamic-color', rgb);
+                        document.documentElement.style.setProperty('--dynamic-color', `rgb(${r},${g},${b})`);
                         document.documentElement.style.setProperty('--dynamic-glow', `rgba(${r},${g},${b},0.6)`);
                         
-                        // Sync verisini Worker üzerinden buluta gönder
-                        const data = this.state.player.getVideoData();
                         await fetch(`${WORKER_URL}/update-sync`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                title: data.title, artist: data.author,
-                                cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
-                                playing: this.state.player.getPlayerState() === 1
-                            })
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ title: this.state.player.getVideoData().title, artist: this.state.player.getVideoData().author, cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, playing: true })
                         });
                     } catch(e) {}
                 };
@@ -121,8 +111,9 @@
                 document.getElementById('progress-bar').style.width = (p.getCurrentTime()/p.getDuration()*100) + "%";
                 if (this.state.curId !== data.video_id) { this.state.curId = data.video_id; this.updateTheme(data.video_id); }
             },
-            togglePlay() { const s = this.state.player.getPlayerState(); s===1 ? this.state.player.pauseVideo() : this.state.player.playVideo(); },
-            next() { this.state.player.nextVideo(); }, prev() { this.state.player.previousVideo(); },
+            togglePlay() { const s = this.state.player?.getPlayerState(); s===1 ? this.state.player.pauseVideo() : this.state.player.playVideo(); },
+            next() { this.state.player?.nextVideo(); },
+            prev() { this.state.player?.previousVideo(); },
             seek(e) { const r = document.getElementById('progress-wrapper').getBoundingClientRect(); this.state.player.seekTo(this.state.player.getDuration() * ((e.clientX - r.left)/r.width)); },
             handleScene(s) {
                 if (!s) return; const name = (typeof s === 'string' ? s : s.name).toLowerCase();
@@ -137,17 +128,15 @@
             }
         };
         function onYouTubeIframeAPIReady() {
-            const savedIndex = parseInt(localStorage.getItem('lastIndex')) || 0;
+            const saved = parseInt(localStorage.getItem('lastIndex')) || 0;
             App.state.player = new YT.Player('player', {
                 height: '100', width: '100',
                 playerVars: { 'listType': 'playlist', 'list': 'PLQOLV2Xf5ZBDoEJmhgkaS57p97-XzSdbY', 'autoplay': 1, 'controls': 0 },
                 events: {
                     'onReady': () => {
-                        if (savedIndex > 0) App.state.player.playVideoAt(savedIndex);
-                        if (window.obsstudio) {
-                            setInterval(() => window.obsstudio.getCurrentScene(s => App.handleScene(s)), 200);
-                            window.obsstudio.onVisibilityChange = (v) => v ? App.state.player.playVideo() : App.state.player.pauseVideo();
-                        }
+                        if (saved > 0) App.state.player.playVideoAt(saved);
+                        setInterval(() => window.obsstudio?.getCurrentScene(s => App.handleScene(s)), 200);
+                        window.obsstudio.onVisibilityChange = (v) => v ? App.state.player.playVideo() : App.state.player.pauseVideo();
                     },
                     'onStateChange': async (e) => {
                         document.getElementById('play-btn').innerText = e.data === 1 ? '⏸' : '▶';
@@ -155,14 +144,7 @@
                             localStorage.setItem('lastIndex', App.state.player.getPlaylistIndex());
                             if (!App.uiInterval) App.uiInterval = setInterval(() => App.updateUI(), 500);
                         } else { clearInterval(App.uiInterval); App.uiInterval = null; }
-                        if (e.data === 0) App.state.player.playVideoAt(0);
-                        
-                        // Oynatma durumu senkronizasyonu
-                        await fetch(`${WORKER_URL}/update-sync`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ playing: e.data === 1 })
-                        });
+                        await fetch(`${WORKER_URL}/update-sync`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playing: e.data === 1 }) });
                     }
                 }
             });
