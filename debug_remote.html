@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Berrovinga Remote DEBUG</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        #log { border: 1px solid #333; padding: 10px; height: 300px; overflow-y: auto; background: #050505; }
+        .error { color: #f00; font-weight: bold; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>Remote Debugger v1.0</h1>
+    <div id="status">Bağlantı Test Ediliyor...</div>
+    <div id="log"></div>
+
+    <script>
+        const WORKER_URL = "https://berrovinga-proxy.ytb6034.workers.dev";
+        const logEl = document.getElementById('log');
+
+        function log(msg, type='') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function testSync() {
+            log("Test Başlıyor: GET /sync isteği atılıyor...");
+            try {
+                const res = await fetch(`${WORKER_URL}/sync`);
+                log(`HTTP Durumu: ${res.status} ${res.statusText}`);
+                
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    log(`HATA: Worker'dan hatalı cevap geldi: ${errorText}`, 'error');
+                    return;
+                }
+
+                const data = await res.json();
+                log("BAŞARILI: Veri başarıyla çekildi!", 'success');
+                log("Gelen Veri: " + JSON.stringify(data));
+                
+                if (!data.sync) log("UYARI: Firebase'de 'sync' düğümü bulunamadı. Lütfen OBS'i (index.html) bir kez çalıştırıp şarkı çalmasını sağlayın.", 'error');
+                
+            } catch(e) {
+                log("KRİTİK HATA: Worker'a ulaşılamıyor! URL yanlış olabilir veya CORS hatası var: " + e.message, 'error');
+            }
+        }
+
+        testSync();
+        setInterval(testSync, 5000);
+    </script>
+</body>
+</html>
